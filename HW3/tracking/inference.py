@@ -75,7 +75,12 @@ class DiscreteDistribution(dict):
         {}
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        sum = self.total()
+        if sum == 0:
+            return
+        for key in self.keys():
+            self[key] = self[key] / sum
+        
 
     def sample(self):
         """
@@ -99,7 +104,15 @@ class DiscreteDistribution(dict):
         0.0
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        rannum = random.random()
+        tempDist = self.copy()
+        tempDist.normalize()
+        sum = 0
+        for key in tempDist.keys():
+            sum = sum + tempDist[key]
+            if rannum <= sum:
+                return key
+        
 
 
 class InferenceModule:
@@ -169,7 +182,15 @@ class InferenceModule:
         Return the probability P(noisyDistance | pacmanPosition, ghostPosition).
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        if ghostPosition == jailPosition:
+            if noisyDistance is None:
+                return 1.0
+            else:
+                return 0.0
+        if noisyDistance is None:
+            return 0.0
+
+        return busters.getObservationProbability(noisyDistance, manhattanDistance(ghostPosition, pacmanPosition))
 
     def setGhostPosition(self, gameState, ghostPosition, index):
         """
@@ -277,7 +298,12 @@ class ExactInference(InferenceModule):
         position is known.
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        newBeliefs = DiscreteDistribution()
+        for position in self.allPositions:
+            prob = self.getObservationProb(observation, gameState.getPacmanPosition(), position, self.getJailPosition())
+            newBeliefs[position] = self.beliefs[position] * prob
+        
+        self.beliefs = newBeliefs
 
         self.beliefs.normalize()
 
@@ -291,7 +317,15 @@ class ExactInference(InferenceModule):
         current position is known.
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        newBeliefs = DiscreteDistribution()
+        for position in self.allPositions:
+            newDist = self.getPositionDistribution(gameState, position)
+            for newPosition in newDist.keys():
+                newBeliefs[newPosition] = self.beliefs[position] * newDist[newPosition] + newBeliefs[newPosition]
+        
+        self.beliefs = newBeliefs
+        self.beliefs.normalize()
+
 
     def getBeliefDistribution(self):
         return self.beliefs
