@@ -196,4 +196,51 @@ class PrioritizedSweepingValueIterationAgent(AsynchronousValueIterationAgent):
 
     def runValueIteration(self):
         "*** YOUR CODE HERE ***"
+        predecessors = {}
+        for state in self.mdp.getStates():
+            if self.mdp.isTerminal(state):
+                continue
+            for action in self.mdp.getPossibleActions(state):
+                for tempNS, tempSP in self.mdp.getTransitionStatesAndProbs(state, action):
+                    if tempSP != 0:
+                        if tempNS in predecessors:
+                            predecessors[tempNS].add(state)
+                        else:
+                            predecessors[tempNS] = {state}
+        
+        priQue = util.PriorityQueue()
+        for state in self.mdp.getStates():
+            if self.mdp.isTerminal(state):
+                continue
+            maxQValue = -999
+            for possibleAction in self.mdp.getPossibleActions(state):
+                maxQValue = max(maxQValue, self.computeQValueFromValues(state, possibleAction))
+            diff = abs(self.values[state] - maxQValue)
+            priQue.update(state, -diff)
+        
+        for i in range(self.iterations):
+            if priQue.isEmpty():
+                break
+            
+            state = priQue.pop()
+            
+            if self.mdp.isTerminal(state):
+                continue
+            maxQValue = -999
+            for possibleAction in self.mdp.getPossibleActions(state):
+                maxQValue = max(maxQValue, self.computeQValueFromValues(state, possibleAction))
+            self.values[state] = maxQValue
+
+            for pred in predecessors[state]:
+                if self.mdp.isTerminal(pred):
+                    continue
+                maxQValue = -999
+                for possibleAction in self.mdp.getPossibleActions(pred):
+                    maxQValue = max(maxQValue, self.computeQValueFromValues(pred, possibleAction))
+                diff = abs(self.values[pred] - maxQValue)
+
+                if diff > self.theta:
+                    priQue.update(pred, -diff)
+
+
 
